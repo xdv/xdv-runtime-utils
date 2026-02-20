@@ -1,0 +1,114 @@
+// xdv-core: runtime administration orchestration application
+
+forge XdvCoreRuntimeAdmin {
+
+    const STATUS_OK: UInt32 = 0;
+    const STATUS_RUNTIME_SET_FAILED: UInt32 = 1;
+    const STATUS_ADMIN_SET_FAILED: UInt32 = 2;
+
+    const TOOL_CONSOLE: UInt32 = 1;
+    const TOOL_INIT: UInt32 = 2;
+    const TOOL_IO: UInt32 = 3;
+    const TOOL_MEMORY: UInt32 = 4;
+    const TOOL_PROCESS: UInt32 = 5;
+    const TOOL_SCHEDULER: UInt32 = 6;
+    const TOOL_STRING: UInt32 = 7;
+    const TOOL_SYSMON: UInt32 = 8;
+    const TOOL_SERVICE: UInt32 = 9;
+    const TOOL_LOG: UInt32 = 10;
+    const TOOL_STORAGE: UInt32 = 11;
+    const TOOL_SECURITY: UInt32 = 12;
+    const TOOL_RECOVERY: UInt32 = 13;
+
+    const SAMPLE_PTR: UInt64 = 1;
+
+    proc K::run_runtime_minimum_set() {
+
+        let console_state = console_status();
+        if console_state == STATUS_OK {
+            let init_state = init_status();
+            if init_state == STATUS_OK {
+                let io_fd = io_open_read(SAMPLE_PTR);
+                if io_fd == 0 {
+                    return STATUS_RUNTIME_SET_FAILED;
+                } else {
+                    io_close(io_fd);
+                    let memory_state = memory_diag();
+                    if memory_state == STATUS_OK {
+                        let pid_state = process_current_pid();
+                        if pid_state == 0 {
+                            return STATUS_RUNTIME_SET_FAILED;
+                        } else {
+                            let scheduler_state = scheduler_status();
+                            if scheduler_state == 3 {
+                                return STATUS_RUNTIME_SET_FAILED;
+                            } else {
+                                let string_state = string_len(SAMPLE_PTR);
+                                if string_state == 0 {
+                                    return STATUS_RUNTIME_SET_FAILED;
+                                } else {
+                                    return STATUS_OK;
+                                }
+                            }
+                        }
+                    } else {
+                        return STATUS_RUNTIME_SET_FAILED;
+                    }
+                }
+            } else {
+                return STATUS_RUNTIME_SET_FAILED;
+            }
+        } else {
+            return STATUS_RUNTIME_SET_FAILED;
+        }
+    }
+
+    proc K::run_system_admin_set() {
+
+        let sysmon_state = sysmon_snapshot();
+        if sysmon_state == STATUS_OK {
+            let service_state = service_status();
+            if service_state == STATUS_OK {
+                let log_state = log_status();
+                if log_state == STATUS_OK {
+                    let storage_state = storage_status();
+                    if storage_state == STATUS_OK {
+                        let security_state = security_status();
+                        if security_state == STATUS_OK {
+                            let recovery_state = recovery_diagnostics();
+                            if recovery_state == STATUS_OK {
+                                return STATUS_OK;
+                            } else {
+                                return STATUS_ADMIN_SET_FAILED;
+                            }
+                        } else {
+                            return STATUS_ADMIN_SET_FAILED;
+                        }
+                    } else {
+                        return STATUS_ADMIN_SET_FAILED;
+                    }
+                } else {
+                    return STATUS_ADMIN_SET_FAILED;
+                }
+            } else {
+                return STATUS_ADMIN_SET_FAILED;
+            }
+        } else {
+            return STATUS_ADMIN_SET_FAILED;
+        }
+    }
+
+    proc K::run_full_admin_cycle() {
+        let runtime_state = run_runtime_minimum_set();
+        if runtime_state == STATUS_OK {
+            let admin_state = run_system_admin_set();
+            if admin_state == STATUS_OK {
+                return STATUS_OK;
+            } else {
+                return STATUS_ADMIN_SET_FAILED;
+            }
+        } else {
+            return STATUS_RUNTIME_SET_FAILED;
+        }
+    }
+}

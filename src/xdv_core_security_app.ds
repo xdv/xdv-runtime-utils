@@ -1,0 +1,68 @@
+// xdv-core: security and permission administration application
+
+forge XdvCoreSecurityApp {
+
+    const APP_ID: UInt32 = 12;
+
+    const STATUS_OK: UInt32 = 0;
+    const STATUS_SECURITY_FAILED: UInt32 = 1;
+    const STATUS_INVALID_MODE: UInt32 = 2;
+
+    const MODE_LOCKDOWN: UInt16 = 384;
+    const MODE_STANDARD: UInt16 = 420;
+    const DEFAULT_UMASK: UInt16 = 18;
+    const MAX_MODE: UInt16 = 511;
+
+    proc K::security_status() {
+        let mask = perm_default_umask();
+        let pid = process_current_pid();
+        if pid == 0 {
+            return STATUS_SECURITY_FAILED;
+        } else {
+            if mask > MAX_MODE {
+                return STATUS_SECURITY_FAILED;
+            } else {
+                return STATUS_OK;
+            }
+        }
+    }
+
+    proc K::security_chmod(path: Str, mode: UInt16) {
+        if mode > MAX_MODE {
+            return STATUS_INVALID_MODE;
+        } else {
+            return perm_chmod(path, mode);
+        }
+    }
+
+    proc K::security_chown(path: Str, user_id: UInt32) {
+        return perm_chown(path, user_id);
+    }
+
+    proc K::security_chgrp(path: Str, group_id: UInt32) {
+        return perm_chgrp(path, group_id);
+    }
+
+    proc K::security_lockdown(path: Str) {
+        let status = perm_chmod(path, MODE_LOCKDOWN);
+        if status == STATUS_OK {
+            return STATUS_OK;
+        } else {
+            return STATUS_SECURITY_FAILED;
+        }
+    }
+
+    proc K::security_restore(path: Str) {
+        let chmod_status = perm_chmod(path, MODE_STANDARD);
+        if chmod_status == STATUS_OK {
+            let umask = perm_set_umask(DEFAULT_UMASK);
+            if umask == DEFAULT_UMASK {
+                return STATUS_OK;
+            } else {
+                return STATUS_SECURITY_FAILED;
+            }
+        } else {
+            return STATUS_SECURITY_FAILED;
+        }
+    }
+}

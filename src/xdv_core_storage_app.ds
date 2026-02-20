@@ -1,0 +1,68 @@
+// xdv-core: storage and filesystem administration application
+
+forge XdvCoreStorageApp {
+
+    const APP_ID: UInt32 = 11;
+
+    const STATUS_OK: UInt32 = 0;
+    const STATUS_STORAGE_FAILED: UInt32 = 1;
+
+    const SAFE_REPAIR_MODE: UInt32 = 1;
+    const DEFAULT_FILE_MODE: UInt16 = 420;
+
+    proc K::storage_status() {
+        let probe = probe_all();
+        if probe == STATUS_OK {
+            let blk = lsblk();
+            if blk == STATUS_OK {
+                return STATUS_OK;
+            } else {
+                return STATUS_STORAGE_FAILED;
+            }
+        } else {
+            return STATUS_STORAGE_FAILED;
+        }
+    }
+
+    proc K::storage_partition_print(device: Str) {
+        return fdisk_print(device);
+    }
+
+    proc K::storage_mkfs(device: Str) {
+        return mkfs_xdvfs(device);
+    }
+
+    proc K::storage_fsck(device: Str) {
+        return fsck_xdvfs(device, SAFE_REPAIR_MODE);
+    }
+
+    proc K::storage_mount(device: Str, mount_point: Str) {
+        return mount_xdvfs(device, mount_point);
+    }
+
+    proc K::storage_unmount(mount_point: Str) {
+        return mount_umount(mount_point);
+    }
+
+    proc K::storage_df(device: Str, mount_point: Str) {
+        return space_df(device, mount_point);
+    }
+
+    proc K::storage_dir_list(path: Str) {
+        return dir_ls(path, 0);
+    }
+
+    proc K::storage_file_touch(path: Str) {
+        let touch_status = file_touch(path);
+        if touch_status == STATUS_OK {
+            let perm_status = perm_chmod(path, DEFAULT_FILE_MODE);
+            if perm_status == STATUS_OK {
+                return STATUS_OK;
+            } else {
+                return STATUS_STORAGE_FAILED;
+            }
+        } else {
+            return STATUS_STORAGE_FAILED;
+        }
+    }
+}

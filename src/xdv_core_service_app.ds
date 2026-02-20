@@ -1,0 +1,102 @@
+// xdv-core: service and task control application
+
+forge XdvCoreServiceApp {
+
+    const APP_ID: UInt32 = 9;
+
+    const STATUS_OK: UInt32 = 0;
+    const STATUS_SERVICE_FAILED: UInt32 = 1;
+    const STATUS_INVALID_PID: UInt32 = 2;
+
+    const DEFAULT_STACK_SIZE: UInt32 = 8192;
+    const DEFAULT_PRIORITY: UInt32 = 5;
+    const INVALID_PID: UInt32 = 0;
+
+    proc K::service_status() {
+        let pid = process_current_pid();
+        if pid == INVALID_PID {
+            return STATUS_SERVICE_FAILED;
+        } else {
+            let sched = scheduler_status();
+            if sched == 3 {
+                return STATUS_SERVICE_FAILED;
+            } else {
+                return STATUS_OK;
+            }
+        }
+    }
+
+    proc K::service_start(entry: UInt64) {
+        let pid = process_spawn_with_stack(entry, DEFAULT_STACK_SIZE);
+        if pid == INVALID_PID {
+            return STATUS_SERVICE_FAILED;
+        } else {
+            let add_status = scheduler_add(pid);
+            if add_status == STATUS_OK {
+                let prio_status = scheduler_set_priority(pid, DEFAULT_PRIORITY);
+                if prio_status == STATUS_OK {
+                    return STATUS_OK;
+                } else {
+                    return STATUS_SERVICE_FAILED;
+                }
+            } else {
+                return STATUS_SERVICE_FAILED;
+            }
+        }
+    }
+
+    proc K::service_start_priority(entry: UInt64, priority: UInt32) {
+        let pid = process_spawn_with_stack(entry, DEFAULT_STACK_SIZE);
+        if pid == INVALID_PID {
+            return STATUS_SERVICE_FAILED;
+        } else {
+            let add_status = scheduler_add(pid);
+            if add_status == STATUS_OK {
+                let prio_status = scheduler_set_priority(pid, priority);
+                if prio_status == STATUS_OK {
+                    return STATUS_OK;
+                } else {
+                    return STATUS_SERVICE_FAILED;
+                }
+            } else {
+                return STATUS_SERVICE_FAILED;
+            }
+        }
+    }
+
+    proc K::service_stop(pid: UInt32) {
+        if pid == INVALID_PID {
+            return STATUS_INVALID_PID;
+        } else {
+            let remove_status = scheduler_remove(pid);
+            if remove_status == STATUS_OK {
+                let kill_status = process_kill(pid);
+                if kill_status == STATUS_OK {
+                    return STATUS_OK;
+                } else {
+                    return STATUS_SERVICE_FAILED;
+                }
+            } else {
+                return STATUS_SERVICE_FAILED;
+            }
+        }
+    }
+
+    proc K::service_restart(pid: UInt32, entry: UInt64) {
+        let stop_status = service_stop(pid);
+        if stop_status == STATUS_OK {
+            return service_start(entry);
+        } else {
+            return STATUS_SERVICE_FAILED;
+        }
+    }
+
+    proc K::service_reload() {
+        let reload_status = init_reload();
+        if reload_status == STATUS_OK {
+            return STATUS_OK;
+        } else {
+            return STATUS_SERVICE_FAILED;
+        }
+    }
+}

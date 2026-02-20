@@ -1,0 +1,83 @@
+// xdv-core: runtime string administration application
+
+forge XdvCoreStringApp {
+
+    const APP_ID: UInt32 = 7;
+
+    const STATUS_OK: UInt32 = 0;
+    const STATUS_STRING_FAILED: UInt32 = 1;
+    const STATUS_INVALID_INPUT: UInt32 = 2;
+    const STATUS_OUT_OF_BOUNDS: UInt32 = 3;
+
+    proc K::string_len(ptr: UInt64) {
+        if ptr == 0 {
+            return STATUS_INVALID_INPUT;
+        } else {
+            return len(ptr);
+        }
+    }
+
+    proc K::string_concat(a: UInt64, b: UInt64) {
+        if a == 0 {
+            if b == 0 {
+                return STATUS_INVALID_INPUT;
+            } else {
+                return concat(a, b);
+            }
+        } else {
+            return concat(a, b);
+        }
+    }
+
+    proc K::string_compare(a: UInt64, b: UInt64) {
+        if a == 0 {
+            if b == 0 {
+                return STATUS_OK;
+            } else {
+                return STATUS_INVALID_INPUT;
+            }
+        } else {
+            return compare(a, b);
+        }
+    }
+
+    proc K::string_find(haystack: UInt64, needle: UInt64) {
+        if haystack == 0 {
+            return STATUS_INVALID_INPUT;
+        } else {
+            if needle == 0 {
+                return STATUS_INVALID_INPUT;
+            } else {
+                return find(haystack, needle);
+            }
+        }
+    }
+
+    proc K::string_substring(ptr: UInt64, start_idx: UInt32, end_idx: UInt32) {
+        if ptr == 0 {
+            return STATUS_INVALID_INPUT;
+        } else {
+            if start_idx > end_idx {
+                return STATUS_OUT_OF_BOUNDS;
+            } else {
+                return substring(ptr, start_idx, end_idx);
+            }
+        }
+    }
+
+    proc K::string_to_upper(ptr: UInt64) {
+        if ptr == 0 {
+            return STATUS_INVALID_INPUT;
+        } else {
+            return to_upper(ptr);
+        }
+    }
+
+    proc K::string_to_lower(ptr: UInt64) {
+        if ptr == 0 {
+            return STATUS_INVALID_INPUT;
+        } else {
+            return to_lower(ptr);
+        }
+    }
+}

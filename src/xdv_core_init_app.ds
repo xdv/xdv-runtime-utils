@@ -1,0 +1,87 @@
+// xdv-core: init lifecycle administration application
+
+forge XdvCoreInitApp {
+
+    const APP_ID: UInt32 = 2;
+
+    const STATUS_OK: UInt32 = 0;
+    const STATUS_INIT_FAILED: UInt32 = 1;
+    const STATUS_WAIT_FAILED: UInt32 = 2;
+    const STATUS_SIGNAL_FAILED: UInt32 = 3;
+
+    const SIGNAL_SHUTDOWN: UInt32 = 15;
+    const SIGNAL_RELOAD: UInt32 = 1;
+
+    proc K::init_status() {
+        return main();
+    }
+
+    proc K::init_bootstrap() {
+        let console_status = init_console();
+        if console_status == STATUS_OK {
+            let scheduler_status = init_scheduler();
+            if scheduler_status == STATUS_OK {
+                let fs_status = init_fs();
+                if fs_status == STATUS_OK {
+                    let shell_status = spawn_shell();
+                    if shell_status == STATUS_OK {
+                        return STATUS_OK;
+                    } else {
+                        return STATUS_INIT_FAILED;
+                    }
+                } else {
+                    return STATUS_INIT_FAILED;
+                }
+            } else {
+                return STATUS_INIT_FAILED;
+            }
+        } else {
+            return STATUS_INIT_FAILED;
+        }
+    }
+
+    proc K::init_spawn_shell() {
+        let status = spawn_shell();
+        if status == STATUS_OK {
+            return STATUS_OK;
+        } else {
+            return STATUS_INIT_FAILED;
+        }
+    }
+
+    proc K::init_wait(pid: UInt32) {
+        let status = wait_for_child(pid);
+        if status == STATUS_OK {
+            return STATUS_OK;
+        } else {
+            return STATUS_WAIT_FAILED;
+        }
+    }
+
+    proc K::init_reap() {
+        let status = reap_zombies();
+        if status == STATUS_OK {
+            return STATUS_OK;
+        } else {
+            return STATUS_INIT_FAILED;
+        }
+    }
+
+    proc K::init_shutdown() {
+        let status = handle_signal(SIGNAL_SHUTDOWN);
+        if status == STATUS_OK {
+            return STATUS_OK;
+        } else {
+            return STATUS_SIGNAL_FAILED;
+        }
+    }
+
+    proc K::init_reload() {
+        let status = handle_signal(SIGNAL_RELOAD);
+        if status == STATUS_OK {
+            return STATUS_OK;
+        } else {
+            return STATUS_SIGNAL_FAILED;
+        }
+    }
+}

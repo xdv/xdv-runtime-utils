@@ -1,0 +1,74 @@
+// xdv-core: runtime I/O administration application
+
+forge XdvCoreIoApp {
+
+    const APP_ID: UInt32 = 3;
+
+    const STATUS_OK: UInt32 = 0;
+    const STATUS_IO_FAILED: UInt32 = 1;
+    const STATUS_INVALID_PATH: UInt32 = 2;
+    const STATUS_INVALID_HANDLE: UInt32 = 3;
+    const STATUS_INVALID_BUFFER: UInt32 = 4;
+
+    const MODE_READ: UInt32 = 0;
+    const MODE_WRITE: UInt32 = 1;
+    const MODE_APPEND: UInt32 = 2;
+
+    const INVALID_FD: UInt64 = 0;
+
+    proc K::io_open_read(path_ptr: UInt64) {
+        if path_ptr == 0 {
+            return INVALID_FD;
+        } else {
+            return open(path_ptr, MODE_READ);
+        }
+    }
+
+    proc K::io_open_write(path_ptr: UInt64) {
+        if path_ptr == 0 {
+            return INVALID_FD;
+        } else {
+            return open(path_ptr, MODE_WRITE);
+        }
+    }
+
+    proc K::io_open_append(path_ptr: UInt64) {
+        if path_ptr == 0 {
+            return INVALID_FD;
+        } else {
+            return open(path_ptr, MODE_APPEND);
+        }
+    }
+
+    proc K::io_read(fd: UInt64, buffer: UInt64, size: UInt32) {
+        if fd == INVALID_FD {
+            return STATUS_INVALID_HANDLE;
+        } else {
+            if buffer == 0 {
+                return STATUS_INVALID_BUFFER;
+            } else {
+                return read(fd, buffer, size);
+            }
+        }
+    }
+
+    proc K::io_write(fd: UInt64, buffer: UInt64, size: UInt32) {
+        if fd == INVALID_FD {
+            return STATUS_INVALID_HANDLE;
+        } else {
+            if buffer == 0 {
+                return STATUS_INVALID_BUFFER;
+            } else {
+                return write(fd, buffer, size);
+            }
+        }
+    }
+
+    proc K::io_close(fd: UInt64) {
+        if fd == INVALID_FD {
+            return STATUS_INVALID_HANDLE;
+        } else {
+            return close(fd);
+        }
+    }
+}

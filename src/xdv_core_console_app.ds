@@ -1,0 +1,97 @@
+// xdv-core: console administration application
+
+forge XdvCoreConsoleApp {
+
+    const APP_ID: UInt32 = 1;
+
+    const STATUS_OK: UInt32 = 0;
+    const STATUS_CONSOLE_FAIL: UInt32 = 1;
+    const STATUS_INVALID_COORD: UInt32 = 2;
+    const STATUS_INVALID_INPUT: UInt32 = 3;
+
+    const DEFAULT_FG: UInt8 = 7;
+    const DEFAULT_BG: UInt8 = 0;
+
+    const MAX_ROWS: UInt32 = 25;
+    const MAX_COLS: UInt32 = 80;
+
+    proc K::console_status() {
+        let row = get_cursor_row();
+        let col = get_cursor_col();
+        if row < MAX_ROWS {
+            if col < MAX_COLS {
+                return STATUS_OK;
+            } else {
+                return STATUS_CONSOLE_FAIL;
+            }
+        } else {
+            return STATUS_CONSOLE_FAIL;
+        }
+    }
+
+    proc K::console_clear() {
+        let status = clear();
+        if status == STATUS_OK {
+            return STATUS_OK;
+        } else {
+            return STATUS_CONSOLE_FAIL;
+        }
+    }
+
+    proc K::console_set_theme(fg: UInt8, bg: UInt8) {
+        let theme_status = set_color(fg, bg);
+        if theme_status == STATUS_OK {
+            return STATUS_OK;
+        } else {
+            return STATUS_CONSOLE_FAIL;
+        }
+    }
+
+    proc K::console_reset_theme() {
+        let status = console_set_theme(DEFAULT_FG, DEFAULT_BG);
+        if status == STATUS_OK {
+            return STATUS_OK;
+        } else {
+            return STATUS_CONSOLE_FAIL;
+        }
+    }
+
+    proc K::console_write(ptr: UInt64) {
+        if ptr == 0 {
+            return STATUS_INVALID_INPUT;
+        } else {
+            let status = puts(ptr);
+            if status == STATUS_OK {
+                return STATUS_OK;
+            } else {
+                return STATUS_CONSOLE_FAIL;
+            }
+        }
+    }
+
+    proc K::console_read_key() {
+        let key = getchar();
+        if key == 0 {
+            return STATUS_CONSOLE_FAIL;
+        } else {
+            return key;
+        }
+    }
+
+    proc K::console_move_cursor(row: UInt32, col: UInt32) {
+        if row < MAX_ROWS {
+            if col < MAX_COLS {
+                let status = set_cursor(row, col);
+                if status == STATUS_OK {
+                    return STATUS_OK;
+                } else {
+                    return STATUS_CONSOLE_FAIL;
+                }
+            } else {
+                return STATUS_INVALID_COORD;
+            }
+        } else {
+            return STATUS_INVALID_COORD;
+        }
+    }
+}

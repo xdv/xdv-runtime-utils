@@ -1,0 +1,94 @@
+// xdv-core: runtime scheduler administration application
+
+forge XdvCoreSchedulerApp {
+
+    const APP_ID: UInt32 = 6;
+
+    const STATUS_OK: UInt32 = 0;
+    const STATUS_SCHEDULER_FAILED: UInt32 = 1;
+    const STATUS_INVALID_PRIORITY: UInt32 = 2;
+    const STATUS_NOT_RUNNING: UInt32 = 3;
+
+    const DEFAULT_PRIORITY: UInt32 = 5;
+    const MAX_PRIORITY: UInt32 = 10;
+
+    proc K::scheduler_status() {
+        let current = get_current_task();
+        if current == STATUS_NOT_RUNNING {
+            return STATUS_NOT_RUNNING;
+        } else {
+            return current;
+        }
+    }
+
+    proc K::scheduler_init_start() {
+        let init_status = init();
+        if init_status == STATUS_OK {
+            let start_status = start();
+            if start_status == STATUS_OK {
+                return STATUS_OK;
+            } else {
+                return STATUS_SCHEDULER_FAILED;
+            }
+        } else {
+            return STATUS_SCHEDULER_FAILED;
+        }
+    }
+
+    proc K::scheduler_stop() {
+        let stop_status = stop();
+        if stop_status == STATUS_OK {
+            return STATUS_OK;
+        } else {
+            return STATUS_SCHEDULER_FAILED;
+        }
+    }
+
+    proc K::scheduler_add(pid: UInt32) {
+        let task = add_task(pid, DEFAULT_PRIORITY);
+        if task == STATUS_INVALID_PRIORITY {
+            return STATUS_INVALID_PRIORITY;
+        } else {
+            if task == STATUS_NOT_RUNNING {
+                return STATUS_NOT_RUNNING;
+            } else {
+                if task == STATUS_SCHEDULER_FAILED {
+                    return STATUS_SCHEDULER_FAILED;
+                } else {
+                    return STATUS_OK;
+                }
+            }
+        }
+    }
+
+    proc K::scheduler_remove(pid: UInt32) {
+        let status = remove_task(pid);
+        if status == STATUS_OK {
+            return STATUS_OK;
+        } else {
+            return STATUS_SCHEDULER_FAILED;
+        }
+    }
+
+    proc K::scheduler_set_priority(pid: UInt32, priority: UInt32) {
+        if priority > MAX_PRIORITY {
+            return STATUS_INVALID_PRIORITY;
+        } else {
+            let result = set_priority(pid, priority);
+            if result == STATUS_INVALID_PRIORITY {
+                return STATUS_INVALID_PRIORITY;
+            } else {
+                return STATUS_OK;
+            }
+        }
+    }
+
+    proc K::scheduler_tick() {
+        let status = schedule();
+        if status == STATUS_NOT_RUNNING {
+            return STATUS_NOT_RUNNING;
+        } else {
+            return status;
+        }
+    }
+}

@@ -1,0 +1,631 @@
+// xdv-core: command-oriented runtime profile wrappers.
+// Each command proc maps application operations to command IDs and
+// returns status-oriented results for shell/runtime dispatchers.
+
+forge XdvCoreCommandProfile {
+
+    const STATUS_OK: UInt32 = 0;
+    const STATUS_COMMAND_FAILED: UInt32 = 254;
+    const STATUS_COMMAND_INVALID: UInt32 = 255;
+
+    const CMD_CONSOLE_STATUS: UInt32 = 1;
+    const CMD_CONSOLE_CLEAR: UInt32 = 2;
+    const CMD_CONSOLE_RESET_THEME: UInt32 = 3;
+    const CMD_CONSOLE_SET_THEME: UInt32 = 4;
+    const CMD_CONSOLE_MOVE_CURSOR: UInt32 = 5;
+    const CMD_CONSOLE_READ_KEY: UInt32 = 6;
+    const CMD_CONSOLE_WRITE: UInt32 = 7;
+
+    const CMD_INIT_STATUS: UInt32 = 1;
+    const CMD_INIT_BOOTSTRAP: UInt32 = 2;
+    const CMD_INIT_SPAWN_SHELL: UInt32 = 3;
+    const CMD_INIT_WAIT: UInt32 = 4;
+    const CMD_INIT_REAP: UInt32 = 5;
+    const CMD_INIT_SHUTDOWN: UInt32 = 6;
+    const CMD_INIT_RELOAD: UInt32 = 7;
+
+    const CMD_IO_OPEN_READ: UInt32 = 1;
+    const CMD_IO_OPEN_WRITE: UInt32 = 2;
+    const CMD_IO_OPEN_APPEND: UInt32 = 3;
+    const CMD_IO_READ: UInt32 = 4;
+    const CMD_IO_WRITE: UInt32 = 5;
+    const CMD_IO_CLOSE: UInt32 = 6;
+
+    const CMD_MEMORY_DIAG: UInt32 = 1;
+    const CMD_MEMORY_ALLOC: UInt32 = 2;
+    const CMD_MEMORY_ZERO_ALLOC: UInt32 = 3;
+    const CMD_MEMORY_FREE: UInt32 = 4;
+    const CMD_MEMORY_COPY: UInt32 = 5;
+    const CMD_MEMORY_SET: UInt32 = 6;
+
+    const CMD_PROCESS_CURRENT_PID: UInt32 = 1;
+    const CMD_PROCESS_SPAWN: UInt32 = 2;
+    const CMD_PROCESS_SPAWN_STACK: UInt32 = 3;
+    const CMD_PROCESS_JOIN: UInt32 = 4;
+    const CMD_PROCESS_KILL: UInt32 = 5;
+    const CMD_PROCESS_SLEEP: UInt32 = 6;
+    const CMD_PROCESS_YIELD: UInt32 = 7;
+
+    const CMD_SCHEDULER_STATUS: UInt32 = 1;
+    const CMD_SCHEDULER_START: UInt32 = 2;
+    const CMD_SCHEDULER_STOP: UInt32 = 3;
+    const CMD_SCHEDULER_ADD: UInt32 = 4;
+    const CMD_SCHEDULER_REMOVE: UInt32 = 5;
+    const CMD_SCHEDULER_SET_PRIORITY: UInt32 = 6;
+    const CMD_SCHEDULER_TICK: UInt32 = 7;
+
+    const CMD_STRING_LEN: UInt32 = 1;
+    const CMD_STRING_COMPARE: UInt32 = 2;
+    const CMD_STRING_FIND: UInt32 = 3;
+    const CMD_STRING_CONCAT: UInt32 = 4;
+    const CMD_STRING_SUBSTRING: UInt32 = 5;
+    const CMD_STRING_UPPER: UInt32 = 6;
+    const CMD_STRING_LOWER: UInt32 = 7;
+
+    const CMD_RUNTIME_MINIMUM_SET: UInt32 = 1;
+    const CMD_RUNTIME_ADMIN_SET: UInt32 = 2;
+    const CMD_RUNTIME_FULL_CYCLE: UInt32 = 3;
+
+    const CMD_SYSMON_SNAPSHOT: UInt32 = 1;
+    const CMD_SYSMON_RUNTIME_HEALTH: UInt32 = 2;
+    const CMD_SYSMON_IO_SAMPLE: UInt32 = 3;
+    const CMD_SYSMON_STORAGE_SAMPLE: UInt32 = 4;
+
+    const CMD_SERVICE_STATUS: UInt32 = 1;
+    const CMD_SERVICE_START: UInt32 = 2;
+    const CMD_SERVICE_START_PRIORITY: UInt32 = 3;
+    const CMD_SERVICE_STOP: UInt32 = 4;
+    const CMD_SERVICE_RESTART: UInt32 = 5;
+    const CMD_SERVICE_RELOAD: UInt32 = 6;
+
+    const CMD_LOG_STATUS: UInt32 = 1;
+    const CMD_LOG_OPEN: UInt32 = 2;
+    const CMD_LOG_WRITE: UInt32 = 3;
+    const CMD_LOG_READ: UInt32 = 4;
+    const CMD_LOG_CLOSE: UInt32 = 5;
+    const CMD_LOG_EMIT_CONSOLE: UInt32 = 6;
+
+    const CMD_STORAGE_STATUS: UInt32 = 1;
+    const CMD_STORAGE_PARTITION_PRINT: UInt32 = 2;
+    const CMD_STORAGE_MKFS: UInt32 = 3;
+    const CMD_STORAGE_FSCK: UInt32 = 4;
+    const CMD_STORAGE_MOUNT: UInt32 = 5;
+    const CMD_STORAGE_UNMOUNT: UInt32 = 6;
+    const CMD_STORAGE_DF: UInt32 = 7;
+    const CMD_STORAGE_DIR_LIST: UInt32 = 8;
+    const CMD_STORAGE_FILE_TOUCH: UInt32 = 9;
+
+    const CMD_SECURITY_STATUS: UInt32 = 1;
+    const CMD_SECURITY_CHMOD: UInt32 = 2;
+    const CMD_SECURITY_CHOWN: UInt32 = 3;
+    const CMD_SECURITY_CHGRP: UInt32 = 4;
+    const CMD_SECURITY_LOCKDOWN: UInt32 = 5;
+    const CMD_SECURITY_RESTORE: UInt32 = 6;
+
+    const CMD_RECOVERY_DIAGNOSTICS: UInt32 = 1;
+    const CMD_RECOVERY_SAFE_MODE: UInt32 = 2;
+    const CMD_RECOVERY_REPAIR: UInt32 = 3;
+    const CMD_RECOVERY_RELOAD_RUNTIME: UInt32 = 4;
+
+    const CMD_CLI_MINIMUM: UInt32 = 1;
+    const CMD_CLI_ADMIN: UInt32 = 2;
+    const CMD_CLI_RECOVERY: UInt32 = 3;
+    const CMD_CLI_ALL: UInt32 = 4;
+
+    proc K::core_console_command(command: UInt32, ptr: UInt64, row: UInt32, col: UInt32, fg: UInt8, bg: UInt8) {
+        if command == CMD_CONSOLE_STATUS {
+            return console_status();
+        } else {
+            if command == CMD_CONSOLE_CLEAR {
+                return console_clear();
+            } else {
+                if command == CMD_CONSOLE_RESET_THEME {
+                    return console_reset_theme();
+                } else {
+                    if command == CMD_CONSOLE_SET_THEME {
+                        return console_set_theme(fg, bg);
+                    } else {
+                        if command == CMD_CONSOLE_MOVE_CURSOR {
+                            return console_move_cursor(row, col);
+                        } else {
+                            if command == CMD_CONSOLE_READ_KEY {
+                                let key = console_read_key();
+                                if key == 0 {
+                                    return STATUS_COMMAND_FAILED;
+                                } else {
+                                    return STATUS_OK;
+                                }
+                            } else {
+                                if command == CMD_CONSOLE_WRITE {
+                                    return console_write(ptr);
+                                } else {
+                                    return STATUS_COMMAND_INVALID;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    proc K::core_init_command(command: UInt32, pid: UInt32) {
+        if command == CMD_INIT_STATUS {
+            return init_status();
+        } else {
+            if command == CMD_INIT_BOOTSTRAP {
+                return init_bootstrap();
+            } else {
+                if command == CMD_INIT_SPAWN_SHELL {
+                    return init_spawn_shell();
+                } else {
+                    if command == CMD_INIT_WAIT {
+                        return init_wait(pid);
+                    } else {
+                        if command == CMD_INIT_REAP {
+                            return init_reap();
+                        } else {
+                            if command == CMD_INIT_SHUTDOWN {
+                                return init_shutdown();
+                            } else {
+                                if command == CMD_INIT_RELOAD {
+                                    return init_reload();
+                                } else {
+                                    return STATUS_COMMAND_INVALID;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    proc K::core_io_command(command: UInt32, path_ptr: UInt64, fd: UInt64, buffer: UInt64, size: UInt32) {
+        if command == CMD_IO_OPEN_READ {
+            let opened_r = io_open_read(path_ptr);
+            if opened_r == 0 {
+                return STATUS_COMMAND_FAILED;
+            } else {
+                io_close(opened_r);
+                return STATUS_OK;
+            }
+        } else {
+            if command == CMD_IO_OPEN_WRITE {
+                let opened_w = io_open_write(path_ptr);
+                if opened_w == 0 {
+                    return STATUS_COMMAND_FAILED;
+                } else {
+                    io_close(opened_w);
+                    return STATUS_OK;
+                }
+            } else {
+                if command == CMD_IO_OPEN_APPEND {
+                    let opened_a = io_open_append(path_ptr);
+                    if opened_a == 0 {
+                        return STATUS_COMMAND_FAILED;
+                    } else {
+                        io_close(opened_a);
+                        return STATUS_OK;
+                    }
+                } else {
+                    if command == CMD_IO_READ {
+                        return io_read(fd, buffer, size);
+                    } else {
+                        if command == CMD_IO_WRITE {
+                            return io_write(fd, buffer, size);
+                        } else {
+                            if command == CMD_IO_CLOSE {
+                                return io_close(fd);
+                            } else {
+                                return STATUS_COMMAND_INVALID;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    proc K::core_memory_command(command: UInt32, ptr: UInt64, src: UInt64, size: UInt32, value: UInt8) {
+        if command == CMD_MEMORY_DIAG {
+            return memory_diag();
+        } else {
+            if command == CMD_MEMORY_ALLOC {
+                let alloc_ptr = memory_alloc(size);
+                if alloc_ptr == 0 {
+                    return STATUS_COMMAND_FAILED;
+                } else {
+                    memory_free(alloc_ptr);
+                    return STATUS_OK;
+                }
+            } else {
+                if command == CMD_MEMORY_ZERO_ALLOC {
+                    let zero_ptr = memory_zero_alloc(size);
+                    if zero_ptr == 0 {
+                        return STATUS_COMMAND_FAILED;
+                    } else {
+                        memory_free(zero_ptr);
+                        return STATUS_OK;
+                    }
+                } else {
+                    if command == CMD_MEMORY_FREE {
+                        return memory_free(ptr);
+                    } else {
+                        if command == CMD_MEMORY_COPY {
+                            return memory_copy(ptr, src, size);
+                        } else {
+                            if command == CMD_MEMORY_SET {
+                                return memory_set(ptr, value, size);
+                            } else {
+                                return STATUS_COMMAND_INVALID;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    proc K::core_process_command(command: UInt32, entry: UInt64, pid: UInt32, stack_size: UInt32, duration_ms: UInt32) {
+        if command == CMD_PROCESS_CURRENT_PID {
+            let current = process_current_pid();
+            if current == 0 {
+                return STATUS_COMMAND_FAILED;
+            } else {
+                return STATUS_OK;
+            }
+        } else {
+            if command == CMD_PROCESS_SPAWN {
+                let spawned = process_spawn(entry);
+                if spawned == 0 {
+                    return STATUS_COMMAND_FAILED;
+                } else {
+                    return STATUS_OK;
+                }
+            } else {
+                if command == CMD_PROCESS_SPAWN_STACK {
+                    let spawned_stack = process_spawn_with_stack(entry, stack_size);
+                    if spawned_stack == 0 {
+                        return STATUS_COMMAND_FAILED;
+                    } else {
+                        return STATUS_OK;
+                    }
+                } else {
+                    if command == CMD_PROCESS_JOIN {
+                        let joined = process_join(pid);
+                        if joined == 0 {
+                            return STATUS_COMMAND_FAILED;
+                        } else {
+                            return STATUS_OK;
+                        }
+                    } else {
+                        if command == CMD_PROCESS_KILL {
+                            return process_kill(pid);
+                        } else {
+                            if command == CMD_PROCESS_SLEEP {
+                                return process_sleep(duration_ms);
+                            } else {
+                                if command == CMD_PROCESS_YIELD {
+                                    return process_yield();
+                                } else {
+                                    return STATUS_COMMAND_INVALID;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    proc K::core_scheduler_command(command: UInt32, pid: UInt32, priority: UInt32) {
+        if command == CMD_SCHEDULER_STATUS {
+            let status = scheduler_status();
+            if status == 3 {
+                return STATUS_COMMAND_FAILED;
+            } else {
+                return STATUS_OK;
+            }
+        } else {
+            if command == CMD_SCHEDULER_START {
+                return scheduler_init_start();
+            } else {
+                if command == CMD_SCHEDULER_STOP {
+                    return scheduler_stop();
+                } else {
+                    if command == CMD_SCHEDULER_ADD {
+                        return scheduler_add(pid);
+                    } else {
+                        if command == CMD_SCHEDULER_REMOVE {
+                            return scheduler_remove(pid);
+                        } else {
+                            if command == CMD_SCHEDULER_SET_PRIORITY {
+                                return scheduler_set_priority(pid, priority);
+                            } else {
+                                if command == CMD_SCHEDULER_TICK {
+                                    return scheduler_tick();
+                                } else {
+                                    return STATUS_COMMAND_INVALID;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    proc K::core_string_command(command: UInt32, a: UInt64, b: UInt64, start_idx: UInt32, end_idx: UInt32) {
+        if command == CMD_STRING_LEN {
+            let length = string_len(a);
+            if length == 0 {
+                return STATUS_COMMAND_FAILED;
+            } else {
+                return STATUS_OK;
+            }
+        } else {
+            if command == CMD_STRING_COMPARE {
+                let compared = string_compare(a, b);
+                if compared == STATUS_OK {
+                    return STATUS_OK;
+                } else {
+                    return STATUS_COMMAND_FAILED;
+                }
+            } else {
+                if command == CMD_STRING_FIND {
+                    let found = string_find(a, b);
+                    if found == 0 {
+                        return STATUS_COMMAND_FAILED;
+                    } else {
+                        return STATUS_OK;
+                    }
+                } else {
+                    if command == CMD_STRING_CONCAT {
+                        let concat_ptr = string_concat(a, b);
+                        if concat_ptr == 0 {
+                            return STATUS_COMMAND_FAILED;
+                        } else {
+                            return STATUS_OK;
+                        }
+                    } else {
+                        if command == CMD_STRING_SUBSTRING {
+                            let sub_ptr = string_substring(a, start_idx, end_idx);
+                            if sub_ptr == 0 {
+                                return STATUS_COMMAND_FAILED;
+                            } else {
+                                return STATUS_OK;
+                            }
+                        } else {
+                            if command == CMD_STRING_UPPER {
+                                let upper_ptr = string_to_upper(a);
+                                if upper_ptr == 0 {
+                                    return STATUS_COMMAND_FAILED;
+                                } else {
+                                    return STATUS_OK;
+                                }
+                            } else {
+                                if command == CMD_STRING_LOWER {
+                                    let lower_ptr = string_to_lower(a);
+                                    if lower_ptr == 0 {
+                                        return STATUS_COMMAND_FAILED;
+                                    } else {
+                                        return STATUS_OK;
+                                    }
+                                } else {
+                                    return STATUS_COMMAND_INVALID;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    proc K::core_runtime_admin_command(command: UInt32) {
+        if command == CMD_RUNTIME_MINIMUM_SET {
+            return run_runtime_minimum_set();
+        } else {
+            if command == CMD_RUNTIME_ADMIN_SET {
+                return run_system_admin_set();
+            } else {
+                if command == CMD_RUNTIME_FULL_CYCLE {
+                    return run_full_admin_cycle();
+                } else {
+                    return STATUS_COMMAND_INVALID;
+                }
+            }
+        }
+    }
+
+    proc K::core_sysmon_command(command: UInt32, path_ptr: UInt64, buffer_ptr: UInt64, device: Str) {
+        if command == CMD_SYSMON_SNAPSHOT {
+            return sysmon_snapshot();
+        } else {
+            if command == CMD_SYSMON_RUNTIME_HEALTH {
+                return sysmon_runtime_health();
+            } else {
+                if command == CMD_SYSMON_IO_SAMPLE {
+                    return sysmon_io_sample(path_ptr, buffer_ptr);
+                } else {
+                    if command == CMD_SYSMON_STORAGE_SAMPLE {
+                        return sysmon_storage_sample(device);
+                    } else {
+                        return STATUS_COMMAND_INVALID;
+                    }
+                }
+            }
+        }
+    }
+
+    proc K::core_service_command(command: UInt32, pid: UInt32, entry: UInt64, priority: UInt32) {
+        if command == CMD_SERVICE_STATUS {
+            return service_status();
+        } else {
+            if command == CMD_SERVICE_START {
+                return service_start(entry);
+            } else {
+                if command == CMD_SERVICE_START_PRIORITY {
+                    return service_start_priority(entry, priority);
+                } else {
+                    if command == CMD_SERVICE_STOP {
+                        return service_stop(pid);
+                    } else {
+                        if command == CMD_SERVICE_RESTART {
+                            return service_restart(pid, entry);
+                        } else {
+                            if command == CMD_SERVICE_RELOAD {
+                                return service_reload();
+                            } else {
+                                return STATUS_COMMAND_INVALID;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    proc K::core_log_command(command: UInt32, path_ptr: UInt64, fd: UInt64, buffer_ptr: UInt64, size: UInt32, msg_ptr: UInt64) {
+        if command == CMD_LOG_STATUS {
+            return log_status();
+        } else {
+            if command == CMD_LOG_OPEN {
+                let opened = log_open(path_ptr);
+                if opened == 0 {
+                    return STATUS_COMMAND_FAILED;
+                } else {
+                    log_close(opened);
+                    return STATUS_OK;
+                }
+            } else {
+                if command == CMD_LOG_WRITE {
+                    return log_write(fd, buffer_ptr, size);
+                } else {
+                    if command == CMD_LOG_READ {
+                        return log_read(fd, buffer_ptr);
+                    } else {
+                        if command == CMD_LOG_CLOSE {
+                            return log_close(fd);
+                        } else {
+                            if command == CMD_LOG_EMIT_CONSOLE {
+                                return log_emit_console(msg_ptr);
+                            } else {
+                                return STATUS_COMMAND_INVALID;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    proc K::core_storage_command(command: UInt32, device: Str, mount_point: Str, path: Str) {
+        if command == CMD_STORAGE_STATUS {
+            return storage_status();
+        } else {
+            if command == CMD_STORAGE_PARTITION_PRINT {
+                return storage_partition_print(device);
+            } else {
+                if command == CMD_STORAGE_MKFS {
+                    return storage_mkfs(device);
+                } else {
+                    if command == CMD_STORAGE_FSCK {
+                        return storage_fsck(device);
+                    } else {
+                        if command == CMD_STORAGE_MOUNT {
+                            return storage_mount(device, mount_point);
+                        } else {
+                            if command == CMD_STORAGE_UNMOUNT {
+                                return storage_unmount(mount_point);
+                            } else {
+                                if command == CMD_STORAGE_DF {
+                                    return storage_df(device, mount_point);
+                                } else {
+                                    if command == CMD_STORAGE_DIR_LIST {
+                                        return storage_dir_list(path);
+                                    } else {
+                                        if command == CMD_STORAGE_FILE_TOUCH {
+                                            return storage_file_touch(path);
+                                        } else {
+                                            return STATUS_COMMAND_INVALID;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    proc K::core_security_command(command: UInt32, path: Str, mode: UInt16, user_id: UInt32, group_id: UInt32) {
+        if command == CMD_SECURITY_STATUS {
+            return security_status();
+        } else {
+            if command == CMD_SECURITY_CHMOD {
+                return security_chmod(path, mode);
+            } else {
+                if command == CMD_SECURITY_CHOWN {
+                    return security_chown(path, user_id);
+                } else {
+                    if command == CMD_SECURITY_CHGRP {
+                        return security_chgrp(path, group_id);
+                    } else {
+                        if command == CMD_SECURITY_LOCKDOWN {
+                            return security_lockdown(path);
+                        } else {
+                            if command == CMD_SECURITY_RESTORE {
+                                return security_restore(path);
+                            } else {
+                                return STATUS_COMMAND_INVALID;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    proc K::core_recovery_command(command: UInt32, device: Str, mount_point: Str) {
+        if command == CMD_RECOVERY_DIAGNOSTICS {
+            return recovery_diagnostics();
+        } else {
+            if command == CMD_RECOVERY_SAFE_MODE {
+                return recovery_safe_mode(device, mount_point);
+            } else {
+                if command == CMD_RECOVERY_REPAIR {
+                    return recovery_repair(device, mount_point);
+                } else {
+                    if command == CMD_RECOVERY_RELOAD_RUNTIME {
+                        return recovery_reload_runtime();
+                    } else {
+                        return STATUS_COMMAND_INVALID;
+                    }
+                }
+            }
+        }
+    }
+
+    proc K::core_cli_command(command: UInt32, device: Str, mount_point: Str) {
+        if command == CMD_CLI_MINIMUM {
+            return run_minimum();
+        } else {
+            if command == CMD_CLI_ADMIN {
+                return run_admin();
+            } else {
+                if command == CMD_CLI_RECOVERY {
+                    return run_recovery(device, mount_point);
+                } else {
+                    if command == CMD_CLI_ALL {
+                        return run_all(device, mount_point);
+                    } else {
+                        return STATUS_COMMAND_INVALID;
+                    }
+                }
+            }
+        }
+    }
+}

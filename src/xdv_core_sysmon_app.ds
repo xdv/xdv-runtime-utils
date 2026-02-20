@@ -1,0 +1,89 @@
+// xdv-core: runtime and system telemetry application
+
+forge XdvCoreSysmonApp {
+
+    const APP_ID: UInt32 = 8;
+
+    const STATUS_OK: UInt32 = 0;
+    const STATUS_SYSMON_FAILED: UInt32 = 1;
+    const STATUS_IO_SAMPLE_FAILED: UInt32 = 2;
+    const STATUS_STORAGE_SAMPLE_FAILED: UInt32 = 3;
+
+    const SAMPLE_BUFFER_SIZE: UInt32 = 256;
+
+    proc K::sysmon_snapshot() {
+        let pid = process_current_pid();
+        if pid == 0 {
+            return STATUS_SYSMON_FAILED;
+        } else {
+            let sched = scheduler_status();
+            if sched == 3 {
+                return STATUS_SYSMON_FAILED;
+            } else {
+                let mem = memory_diag();
+                if mem == STATUS_OK {
+                    let probe = probe_all();
+                    if probe == STATUS_OK {
+                        return STATUS_OK;
+                    } else {
+                        return STATUS_SYSMON_FAILED;
+                    }
+                } else {
+                    return STATUS_SYSMON_FAILED;
+                }
+            }
+        }
+    }
+
+    proc K::sysmon_runtime_health() {
+        let init_state = init_status();
+        if init_state == STATUS_OK {
+            let tick = scheduler_tick();
+            if tick == 3 {
+                return STATUS_SYSMON_FAILED;
+            } else {
+                let yield_state = process_yield();
+                if yield_state == STATUS_OK {
+                    return STATUS_OK;
+                } else {
+                    return STATUS_SYSMON_FAILED;
+                }
+            }
+        } else {
+            return STATUS_SYSMON_FAILED;
+        }
+    }
+
+    proc K::sysmon_io_sample(path_ptr: UInt64, buffer_ptr: UInt64) {
+        let fd = io_open_read(path_ptr);
+        if fd == 0 {
+            return STATUS_IO_SAMPLE_FAILED;
+        } else {
+            let read_state = io_read(fd, buffer_ptr, SAMPLE_BUFFER_SIZE);
+            let close_state = io_close(fd);
+            if close_state == STATUS_OK {
+                if read_state == STATUS_OK {
+                    return STATUS_OK;
+                } else {
+                    return STATUS_IO_SAMPLE_FAILED;
+                }
+            } else {
+                return STATUS_IO_SAMPLE_FAILED;
+            }
+        }
+    }
+
+    proc K::sysmon_storage_sample(device: Str) {
+        let ls = lsblk();
+        if ls == STATUS_OK {
+            let stat = space_iostat(device);
+            if stat == STATUS_OK {
+                return STATUS_OK;
+            } else {
+                return STATUS_STORAGE_SAMPLE_FAILED;
+            }
+        } else {
+            return STATUS_STORAGE_SAMPLE_FAILED;
+        }
+    }
+}

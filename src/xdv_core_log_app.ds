@@ -1,0 +1,64 @@
+// xdv-core: logging administration application
+
+forge XdvCoreLogApp {
+
+    const APP_ID: UInt32 = 10;
+
+    const STATUS_OK: UInt32 = 0;
+    const STATUS_LOG_FAILED: UInt32 = 1;
+    const STATUS_INVALID_HANDLE: UInt32 = 2;
+    const STATUS_INVALID_MESSAGE: UInt32 = 3;
+
+    const DEFAULT_LOG_READ: UInt32 = 1024;
+    const INVALID_FD: UInt64 = 0;
+
+    proc K::log_status() {
+        let status = console_status();
+        if status == STATUS_OK {
+            return STATUS_OK;
+        } else {
+            return STATUS_LOG_FAILED;
+        }
+    }
+
+    proc K::log_open(path_ptr: UInt64) {
+        return io_open_append(path_ptr);
+    }
+
+    proc K::log_write(fd: UInt64, buffer_ptr: UInt64, size: UInt32) {
+        if fd == INVALID_FD {
+            return STATUS_INVALID_HANDLE;
+        } else {
+            return io_write(fd, buffer_ptr, size);
+        }
+    }
+
+    proc K::log_read(fd: UInt64, buffer_ptr: UInt64) {
+        if fd == INVALID_FD {
+            return STATUS_INVALID_HANDLE;
+        } else {
+            return io_read(fd, buffer_ptr, DEFAULT_LOG_READ);
+        }
+    }
+
+    proc K::log_close(fd: UInt64) {
+        if fd == INVALID_FD {
+            return STATUS_INVALID_HANDLE;
+        } else {
+            return io_close(fd);
+        }
+    }
+
+    proc K::log_emit_console(msg_ptr: UInt64) {
+        if msg_ptr == 0 {
+            return STATUS_INVALID_MESSAGE;
+        } else {
+            let status = console_write(msg_ptr);
+            if status == STATUS_OK {
+                return STATUS_OK;
+            } else {
+                return STATUS_LOG_FAILED;
+            }
+        }
+    }
+}

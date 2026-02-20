@@ -1,0 +1,84 @@
+// xdv-core: shared CLI orchestration entrypoints
+
+forge XdvCoreCli {
+
+    const PROFILE_MINIMUM: UInt32 = 1;
+    const PROFILE_ADMIN: UInt32 = 2;
+    const PROFILE_RECOVERY: UInt32 = 3;
+    const PROFILE_ALL: UInt32 = 4;
+
+    const STATUS_OK: UInt32 = 0;
+    const STATUS_PROFILE_INVALID: UInt32 = 1;
+    const STATUS_PROFILE_FAILED: UInt32 = 2;
+
+    proc K::run_minimum() {
+        let status = run_runtime_minimum_set();
+        if status == STATUS_OK {
+            return STATUS_OK;
+        } else {
+            return STATUS_PROFILE_FAILED;
+        }
+    }
+
+    proc K::run_admin() {
+        let status = run_system_admin_set();
+        if status == STATUS_OK {
+            return STATUS_OK;
+        } else {
+            return STATUS_PROFILE_FAILED;
+        }
+    }
+
+    proc K::run_recovery(device: Str, mount_point: Str) {
+        let diag = recovery_diagnostics();
+        if diag == STATUS_OK {
+            let safe = recovery_safe_mode(device, mount_point);
+            if safe == STATUS_OK {
+                return STATUS_OK;
+            } else {
+                return STATUS_PROFILE_FAILED;
+            }
+        } else {
+            return STATUS_PROFILE_FAILED;
+        }
+    }
+
+    proc K::run_all(device: Str, mount_point: Str) {
+        let runtime = run_runtime_minimum_set();
+        if runtime == STATUS_OK {
+            let admin = run_system_admin_set();
+            if admin == STATUS_OK {
+                let repair = recovery_repair(device, mount_point);
+                if repair == STATUS_OK {
+                    return STATUS_OK;
+                } else {
+                    return STATUS_PROFILE_FAILED;
+                }
+            } else {
+                return STATUS_PROFILE_FAILED;
+            }
+        } else {
+            return STATUS_PROFILE_FAILED;
+        }
+    }
+
+    proc K::run_profile(profile: UInt32, device: Str, mount_point: Str) {
+        if profile == PROFILE_MINIMUM {
+            return run_minimum();
+        } else {
+            if profile == PROFILE_ADMIN {
+                return run_admin();
+            } else {
+                if profile == PROFILE_RECOVERY {
+                    return run_recovery(device, mount_point);
+                } else {
+                    if profile == PROFILE_ALL {
+                        return run_all(device, mount_point);
+                    } else {
+                        return STATUS_PROFILE_INVALID;
+                    }
+                }
+            }
+        }
+    }
+}

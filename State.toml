@@ -1,0 +1,19 @@
+# XDV Runtime Utils Workspace Manifest
+
+[workspace]
+name = "xdv_runtime_utils"
+version = "0.1.0"
+description = "XDV runtime utility applications for runtime and platform administration"
+
+[sector]
+name = "xdv_runtime_utils"
+path = "src"
+
+[dependencies]
+xdv_runtime = { path = "../xdv-runtime" }
+xdv_xdvfs_utils = { path = "../xdv-xdvfs-utils" }
+xdv_xdvfs = { path = "../xdv-xdvfs" }
+dustlib = { path = "../dustlib" }
+dustlib_k = { path = "../dustlib-k" }
+dust_runtime = { path = "../dust-runtime" }
+

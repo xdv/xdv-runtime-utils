@@ -1,0 +1,85 @@
+// xdv-core: diagnostics and recovery application
+
+forge XdvCoreRecoveryApp {
+
+    const APP_ID: UInt32 = 13;
+
+    const STATUS_OK: UInt32 = 0;
+    const STATUS_RECOVERY_FAILED: UInt32 = 1;
+
+    proc K::recovery_diagnostics() {
+        let sys = sysmon_snapshot();
+        if sys == STATUS_OK {
+            let svc = service_status();
+            if svc == STATUS_OK {
+                let st = storage_status();
+                if st == STATUS_OK {
+                    let sec = security_status();
+                    if sec == STATUS_OK {
+                        return STATUS_OK;
+                    } else {
+                        return STATUS_RECOVERY_FAILED;
+                    }
+                } else {
+                    return STATUS_RECOVERY_FAILED;
+                }
+            } else {
+                return STATUS_RECOVERY_FAILED;
+            }
+        } else {
+            return STATUS_RECOVERY_FAILED;
+        }
+    }
+
+    proc K::recovery_safe_mode(device: Str, mount_point: Str) {
+        let clear_state = console_clear();
+        if clear_state == STATUS_OK {
+            let ro_mount = mount_read_only(device, mount_point);
+            if ro_mount == STATUS_OK {
+                let fsck = fsck_read_only(device);
+                if fsck == STATUS_OK {
+                    return STATUS_OK;
+                } else {
+                    return STATUS_RECOVERY_FAILED;
+                }
+            } else {
+                return STATUS_RECOVERY_FAILED;
+            }
+        } else {
+            return STATUS_RECOVERY_FAILED;
+        }
+    }
+
+    proc K::recovery_repair(device: Str, mount_point: Str) {
+        let fsck = fsck_auto_repair(device);
+        if fsck == STATUS_OK {
+            let check = mount_check(device);
+            if check == STATUS_OK {
+                let mounted = mount_xdvfs(device, mount_point);
+                if mounted == STATUS_OK {
+                    return STATUS_OK;
+                } else {
+                    return STATUS_RECOVERY_FAILED;
+                }
+            } else {
+                return STATUS_RECOVERY_FAILED;
+            }
+        } else {
+            return STATUS_RECOVERY_FAILED;
+        }
+    }
+
+    proc K::recovery_reload_runtime() {
+        let reload = init_reload();
+        if reload == STATUS_OK {
+            let sched = scheduler_init_start();
+            if sched == STATUS_OK {
+                return STATUS_OK;
+            } else {
+                return STATUS_RECOVERY_FAILED;
+            }
+        } else {
+            return STATUS_RECOVERY_FAILED;
+        }
+    }
+}

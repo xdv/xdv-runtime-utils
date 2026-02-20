@@ -1,0 +1,70 @@
+// xdv-core: runtime memory administration application
+
+forge XdvCoreMemoryApp {
+
+    const APP_ID: UInt32 = 4;
+
+    const STATUS_OK: UInt32 = 0;
+    const STATUS_MEMORY_FAILED: UInt32 = 1;
+    const STATUS_INVALID_POINTER: UInt32 = 2;
+
+    const DIAG_BLOCK_SIZE: UInt32 = 4096;
+    const ZERO_VALUE: UInt8 = 0;
+    const NULL_PTR: UInt64 = 0;
+
+    proc K::memory_alloc(size: UInt32) {
+        return alloc(size);
+    }
+
+    proc K::memory_zero_alloc(size: UInt32) {
+        return zero_alloc(size);
+    }
+
+    proc K::memory_free(ptr: UInt64) {
+        if ptr == NULL_PTR {
+            return STATUS_INVALID_POINTER;
+        } else {
+            return free(ptr);
+        }
+    }
+
+    proc K::memory_copy(dest: UInt64, src: UInt64, size: UInt32) {
+        if dest == NULL_PTR {
+            return STATUS_INVALID_POINTER;
+        } else {
+            if src == NULL_PTR {
+                return STATUS_INVALID_POINTER;
+            } else {
+                return copy(dest, src, size);
+            }
+        }
+    }
+
+    proc K::memory_set(ptr: UInt64, value: UInt8, size: UInt32) {
+        if ptr == NULL_PTR {
+            return STATUS_INVALID_POINTER;
+        } else {
+            return set(ptr, value, size);
+        }
+    }
+
+    proc K::memory_diag() {
+        let ptr = alloc(DIAG_BLOCK_SIZE);
+        if ptr == NULL_PTR {
+            return STATUS_MEMORY_FAILED;
+        } else {
+            let set_status = set(ptr, ZERO_VALUE, DIAG_BLOCK_SIZE);
+            if set_status == DIAG_BLOCK_SIZE {
+                let free_status = free(ptr);
+                if free_status == STATUS_OK {
+                    return STATUS_OK;
+                } else {
+                    return STATUS_MEMORY_FAILED;
+                }
+            } else {
+                free(ptr);
+                return STATUS_MEMORY_FAILED;
+            }
+        }
+    }
+}
