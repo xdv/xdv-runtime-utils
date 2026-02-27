@@ -1,4 +1,7 @@
-// xdv-core: runtime scheduler administration application
+// File: xdv_core_scheduler_app.ds - This file is part of XDV
+// Copyright (c) 2026 Dust LLC, and Contributors
+// Description:
+//   xdv-core: runtime scheduler administration application
 
 forge XdvCoreSchedulerApp {
 

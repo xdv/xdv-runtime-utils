@@ -1,4 +1,7 @@
-// xdv-core: console administration application
+// File: xdv_core_console_app.ds - This file is part of XDV
+// Copyright (c) 2026 Dust LLC, and Contributors
+// Description:
+//   xdv-core: console administration application
 
 forge XdvCoreConsoleApp {
 

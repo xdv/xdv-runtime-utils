@@ -1,4 +1,7 @@
-// xdv-core: security and permission administration application
+// File: xdv_core_security_app.ds - This file is part of XDV
+// Copyright (c) 2026 Dust LLC, and Contributors
+// Description:
+//   xdv-core: security and permission administration application
 
 forge XdvCoreSecurityApp {
 

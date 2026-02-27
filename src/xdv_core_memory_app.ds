@@ -1,4 +1,7 @@
-// xdv-core: runtime memory administration application
+// File: xdv_core_memory_app.ds - This file is part of XDV
+// Copyright (c) 2026 Dust LLC, and Contributors
+// Description:
+//   xdv-core: runtime memory administration application
 
 forge XdvCoreMemoryApp {
 

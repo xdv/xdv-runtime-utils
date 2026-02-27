@@ -1,4 +1,7 @@
-// xdv-core: runtime I/O administration application
+// File: xdv_core_io_app.ds - This file is part of XDV
+// Copyright (c) 2026 Dust LLC, and Contributors
+// Description:
+//   xdv-core: runtime I/O administration application
 
 forge XdvCoreIoApp {
 

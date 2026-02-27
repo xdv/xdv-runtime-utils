@@ -1,4 +1,7 @@
-// xdv-core: shared CLI orchestration entrypoints
+// File: xdv_core_cli.ds - This file is part of XDV
+// Copyright (c) 2026 Dust LLC, and Contributors
+// Description:
+//   xdv-core: shared CLI orchestration entrypoints
 
 forge XdvCoreCli {
 

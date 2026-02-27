@@ -1,4 +1,7 @@
-// xdv-core: runtime and system telemetry application
+// File: xdv_core_sysmon_app.ds - This file is part of XDV
+// Copyright (c) 2026 Dust LLC, and Contributors
+// Description:
+//   xdv-core: runtime and system telemetry application
 
 forge XdvCoreSysmonApp {
 

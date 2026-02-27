@@ -1,6 +1,9 @@
-// xdv-core: command-oriented runtime profile wrappers.
-// Each command proc maps application operations to command IDs and
-// returns status-oriented results for shell/runtime dispatchers.
+// File: xdv_core_command_profile.ds - This file is part of XDV
+// Copyright (c) 2026 Dust LLC, and Contributors
+// Description:
+//   xdv-core: command-oriented runtime profile wrappers.
+//   Each command proc maps application operations to command IDs and
+//   returns status-oriented results for shell/runtime dispatchers.
 
 forge XdvCoreCommandProfile {
 

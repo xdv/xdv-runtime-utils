@@ -1,4 +1,7 @@
-// xdv-core: storage and filesystem administration application
+// File: xdv_core_storage_app.ds - This file is part of XDV
+// Copyright (c) 2026 Dust LLC, and Contributors
+// Description:
+//   xdv-core: storage and filesystem administration application
 
 forge XdvCoreStorageApp {
 
