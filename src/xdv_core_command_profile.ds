@@ -68,6 +68,11 @@ forge XdvCoreCommandProfile {
     const CMD_RUNTIME_MINIMUM_SET: UInt32 = 1;
     const CMD_RUNTIME_ADMIN_SET: UInt32 = 2;
     const CMD_RUNTIME_FULL_CYCLE: UInt32 = 3;
+    const CMD_RUNTIME_DOMAIN_K: UInt32 = 4;
+    const CMD_RUNTIME_DOMAIN_Q: UInt32 = 5;
+    const CMD_RUNTIME_DOMAIN_PHI: UInt32 = 6;
+    const CMD_RUNTIME_DOMAIN_SNAPSHOT: UInt32 = 7;
+    const CMD_RUNTIME_CLI_TESTS: UInt32 = 8;
 
     const CMD_SYSMON_SNAPSHOT: UInt32 = 1;
     const CMD_SYSMON_RUNTIME_HEALTH: UInt32 = 2;
@@ -213,10 +218,10 @@ forge XdvCoreCommandProfile {
                     }
                 } else {
                     if command == CMD_IO_READ {
-                        return io_read(fd, buffer, size);
+                        return io_read_bytes(fd, buffer, size);
                     } else {
                         if command == CMD_IO_WRITE {
-                            return io_write(fd, buffer, size);
+                            return io_write_bytes(fd, buffer, size);
                         } else {
                             if command == CMD_IO_CLOSE {
                                 return io_close(fd);
@@ -436,7 +441,27 @@ forge XdvCoreCommandProfile {
                 if command == CMD_RUNTIME_FULL_CYCLE {
                     return run_full_admin_cycle();
                 } else {
-                    return STATUS_COMMAND_INVALID;
+                    if command == CMD_RUNTIME_DOMAIN_K {
+                        return runtime_introspect_k_domain(10);
+                    } else {
+                        if command == CMD_RUNTIME_DOMAIN_Q {
+                            return runtime_introspect_q_domain(20);
+                        } else {
+                            if command == CMD_RUNTIME_DOMAIN_PHI {
+                                return runtime_introspect_phi_domain(30);
+                            } else {
+                                if command == CMD_RUNTIME_DOMAIN_SNAPSHOT {
+                                    return runtime_introspection_snapshot(40);
+                                } else {
+                                    if command == CMD_RUNTIME_CLI_TESTS {
+                                        return run_all_tests();
+                                    } else {
+                                        return STATUS_COMMAND_INVALID;
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -632,3 +657,6 @@ forge XdvCoreCommandProfile {
         }
     }
 }
+
+
+

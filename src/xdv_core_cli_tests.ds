@@ -1,0 +1,144 @@
+// File: xdv_core_cli_tests.ds - This file is part of XDV
+// Copyright (c) 2026 Dust LLC, and Contributors
+// Description:
+//   xdv-core: CLI/command-profile behavior tests for bare-metal path dispatch.
+
+forge XdvCoreCliTests {
+
+    const TEST_PASS: UInt32 = 0;
+    const TEST_FAIL: UInt32 = 1;
+
+    const STATUS_OK: UInt32 = 0;
+    const STATUS_COMMAND_INVALID: UInt32 = 255;
+
+    const CMD_PROCESS_CURRENT_PID: UInt32 = 1;
+
+    const CMD_RUNTIME_DOMAIN_K: UInt32 = 4;
+    const CMD_RUNTIME_DOMAIN_Q: UInt32 = 5;
+    const CMD_RUNTIME_DOMAIN_PHI: UInt32 = 6;
+    const CMD_RUNTIME_DOMAIN_SNAPSHOT: UInt32 = 7;
+
+    const PROFILE_MINIMUM: UInt32 = 1;
+    const PROFILE_INVALID: UInt32 = 99;
+
+    const DOMAIN_K: UInt32 = 0;
+    const DOMAIN_Q: UInt32 = 1;
+    const DOMAIN_PHI: UInt32 = 2;
+
+    proc K::expect_status(actual: UInt32, expected: UInt32) -> UInt32 {
+        if actual == expected {
+            return TEST_PASS;
+        } else {
+            return TEST_FAIL;
+        }
+    }
+
+    proc K::test_runtime_domain_set_status() -> UInt32 {
+        let k = run_runtime_domain_set(DOMAIN_K, 10);
+        if k == STATUS_OK {
+            let q = run_runtime_domain_set(DOMAIN_Q, 20);
+            if q == STATUS_OK {
+                let phi = run_runtime_domain_set(DOMAIN_PHI, 30);
+                return expect_status(phi, STATUS_OK);
+            } else {
+                return TEST_FAIL;
+            }
+        } else {
+            return TEST_FAIL;
+        }
+    }
+
+    proc K::test_runtime_introspection_reports() -> UInt32 {
+        let rk = core_runtime_admin_command(CMD_RUNTIME_DOMAIN_K);
+        if rk == 0 {
+            return TEST_FAIL;
+        }
+
+        let rq = core_runtime_admin_command(CMD_RUNTIME_DOMAIN_Q);
+        if rq == 0 {
+            return TEST_FAIL;
+        }
+
+        let rp = core_runtime_admin_command(CMD_RUNTIME_DOMAIN_PHI);
+        if rp == 0 {
+            return TEST_FAIL;
+        }
+
+        let rs = core_runtime_admin_command(CMD_RUNTIME_DOMAIN_SNAPSHOT);
+        if rs == 0 {
+            return TEST_FAIL;
+        }
+
+        let sk = report_status(rk);
+        let sq = report_status(rq);
+        let sp = report_status(rp);
+        let ss = report_status(rs);
+
+        if sk == STATUS_OK {
+            if sq == STATUS_OK {
+                if sp == STATUS_OK {
+                    return expect_status(ss, STATUS_OK);
+                } else {
+                    return TEST_FAIL;
+                }
+            } else {
+                return TEST_FAIL;
+            }
+        } else {
+            return TEST_FAIL;
+        }
+    }
+
+    proc K::test_process_command_dispatch() -> UInt32 {
+        let status = core_process_command(CMD_PROCESS_CURRENT_PID, 1, 1, 8192, 1);
+        return expect_status(status, STATUS_OK);
+    }
+
+    proc K::test_invalid_runtime_command_dispatch() -> UInt32 {
+        let status = core_runtime_admin_command(99);
+        return expect_status(status, STATUS_COMMAND_INVALID);
+    }
+
+    proc K::test_cli_profile_dispatch() -> UInt32 {
+        let minimum = run_profile(PROFILE_MINIMUM, "xdva", "/");
+        if minimum == STATUS_OK {
+            let invalid = run_profile(PROFILE_INVALID, "xdva", "/");
+            if invalid == 1 {
+                return TEST_PASS;
+            } else {
+                return TEST_FAIL;
+            }
+        } else {
+            return TEST_FAIL;
+        }
+    }
+
+    proc K::run_all_tests() -> UInt32 {
+        let t1 = test_runtime_domain_set_status();
+        if t1 == TEST_PASS {
+            let t2 = test_runtime_introspection_reports();
+            if t2 == TEST_PASS {
+                let t3 = test_process_command_dispatch();
+                if t3 == TEST_PASS {
+                    let t4 = test_invalid_runtime_command_dispatch();
+                    if t4 == TEST_PASS {
+                        let t5 = test_cli_profile_dispatch();
+                        if t5 == TEST_PASS {
+                            return TEST_PASS;
+                        } else {
+                            return TEST_FAIL;
+                        }
+                    } else {
+                        return TEST_FAIL;
+                    }
+                } else {
+                    return TEST_FAIL;
+                }
+            } else {
+                return TEST_FAIL;
+            }
+        } else {
+            return TEST_FAIL;
+        }
+    }
+}

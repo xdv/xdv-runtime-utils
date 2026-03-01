@@ -62,7 +62,7 @@ forge XdvCoreSysmonApp {
         if fd == 0 {
             return STATUS_IO_SAMPLE_FAILED;
         } else {
-            let read_state = io_read(fd, buffer_ptr, SAMPLE_BUFFER_SIZE);
+            let read_state = io_read_bytes(fd, buffer_ptr, SAMPLE_BUFFER_SIZE);
             let close_state = io_close(fd);
             if close_state == STATUS_OK {
                 if read_state == STATUS_OK {
@@ -90,3 +90,4 @@ forge XdvCoreSysmonApp {
         }
     }
 }
+

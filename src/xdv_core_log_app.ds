@@ -32,7 +32,7 @@ forge XdvCoreLogApp {
         if fd == INVALID_FD {
             return STATUS_INVALID_HANDLE;
         } else {
-            return io_write(fd, buffer_ptr, size);
+            return io_write_bytes(fd, buffer_ptr, size);
         }
     }
 
@@ -40,7 +40,7 @@ forge XdvCoreLogApp {
         if fd == INVALID_FD {
             return STATUS_INVALID_HANDLE;
         } else {
-            return io_read(fd, buffer_ptr, DEFAULT_LOG_READ);
+            return io_read_bytes(fd, buffer_ptr, DEFAULT_LOG_READ);
         }
     }
 
@@ -65,3 +65,4 @@ forge XdvCoreLogApp {
         }
     }
 }
+

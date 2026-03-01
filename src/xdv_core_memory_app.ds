@@ -16,7 +16,7 @@ forge XdvCoreMemoryApp {
     const NULL_PTR: UInt64 = 0;
 
     proc K::memory_alloc(size: UInt32) {
-        return alloc(size);
+        return alloc_mem(size);
     }
 
     proc K::memory_zero_alloc(size: UInt32) {
@@ -27,7 +27,7 @@ forge XdvCoreMemoryApp {
         if ptr == NULL_PTR {
             return STATUS_INVALID_POINTER;
         } else {
-            return free(ptr);
+            return free_mem(ptr);
         }
     }
 
@@ -38,7 +38,7 @@ forge XdvCoreMemoryApp {
             if src == NULL_PTR {
                 return STATUS_INVALID_POINTER;
             } else {
-                return copy(dest, src, size);
+                return copy_mem(dest, src, size);
             }
         }
     }
@@ -47,25 +47,25 @@ forge XdvCoreMemoryApp {
         if ptr == NULL_PTR {
             return STATUS_INVALID_POINTER;
         } else {
-            return set(ptr, value, size);
+            return set_mem(ptr, value, size);
         }
     }
 
     proc K::memory_diag() {
-        let ptr = alloc(DIAG_BLOCK_SIZE);
+        let ptr = alloc_mem(DIAG_BLOCK_SIZE);
         if ptr == NULL_PTR {
             return STATUS_MEMORY_FAILED;
         } else {
-            let set_status = set(ptr, ZERO_VALUE, DIAG_BLOCK_SIZE);
+            let set_status = set_mem(ptr, ZERO_VALUE, DIAG_BLOCK_SIZE);
             if set_status == DIAG_BLOCK_SIZE {
-                let free_status = free(ptr);
+                let free_status = free_mem(ptr);
                 if free_status == STATUS_OK {
                     return STATUS_OK;
                 } else {
                     return STATUS_MEMORY_FAILED;
                 }
             } else {
-                free(ptr);
+                free_mem(ptr);
                 return STATUS_MEMORY_FAILED;
             }
         }

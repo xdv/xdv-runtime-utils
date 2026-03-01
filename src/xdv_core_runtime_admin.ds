@@ -2,67 +2,260 @@
 // Copyright (c) 2026 Dust LLC, and Contributors
 // Description:
 //   xdv-core: runtime administration orchestration application
+//   Implements real runtime introspection and domain-aligned admin surfaces.
 
 forge XdvCoreRuntimeAdmin {
 
     const STATUS_OK: UInt32 = 0;
     const STATUS_RUNTIME_SET_FAILED: UInt32 = 1;
     const STATUS_ADMIN_SET_FAILED: UInt32 = 2;
+    const STATUS_DOMAIN_INVALID: UInt32 = 3;
+    const STATUS_DOMAIN_INTROSPECT_FAILED: UInt32 = 4;
 
-    const TOOL_CONSOLE: UInt32 = 1;
-    const TOOL_INIT: UInt32 = 2;
-    const TOOL_IO: UInt32 = 3;
-    const TOOL_MEMORY: UInt32 = 4;
-    const TOOL_PROCESS: UInt32 = 5;
-    const TOOL_SCHEDULER: UInt32 = 6;
-    const TOOL_STRING: UInt32 = 7;
-    const TOOL_SYSMON: UInt32 = 8;
-    const TOOL_SERVICE: UInt32 = 9;
-    const TOOL_LOG: UInt32 = 10;
-    const TOOL_STORAGE: UInt32 = 11;
-    const TOOL_SECURITY: UInt32 = 12;
-    const TOOL_RECOVERY: UInt32 = 13;
+    const DOMAIN_K: UInt32 = 0;
+    const DOMAIN_Q: UInt32 = 1;
+    const DOMAIN_PHI: UInt32 = 2;
+
+    const CAP_CALL_K: UInt64 = 1;
+    const CAP_CALL_Q: UInt64 = 2;
+    const CAP_CALL_PHI: UInt64 = 4;
+    const CAP_IPC: UInt64 = 8;
+    const CAP_TRANSITION: UInt64 = 16;
+    const CAP_CONTRACT_BIND: UInt64 = 32;
+    const CAP_SYSCALL: UInt64 = 64;
+
+    const REPORT_KIND_K: UInt32 = 1;
+    const REPORT_KIND_Q: UInt32 = 2;
+    const REPORT_KIND_PHI: UInt32 = 3;
+    const REPORT_KIND_ALL: UInt32 = 4;
+
+    const REPORT_KIND_FACTOR: UInt64 = 1000000000000;
+    const REPORT_STATUS_FACTOR: UInt64 = 10000000000;
+    const REPORT_AUX_FACTOR: UInt64 = 100000;
 
     const SAMPLE_PTR: UInt64 = 1;
 
-    proc K::run_runtime_minimum_set() {
+    proc K::pack_report(kind: UInt32, status: UInt32, aux_value: UInt64, data_value: UInt64) -> UInt64 {
+        let aux_norm = aux_value / REPORT_AUX_FACTOR;
+        let aux_value_norm = aux_value - (aux_norm * REPORT_AUX_FACTOR);
+        let data_norm = data_value / REPORT_AUX_FACTOR;
+        let data_value_norm = data_value - (data_norm * REPORT_AUX_FACTOR);
+        return (kind * REPORT_KIND_FACTOR)
+            + (status * REPORT_STATUS_FACTOR)
+            + (aux_value_norm * REPORT_AUX_FACTOR)
+            + data_value_norm;
+    }
 
-        let console_state = console_status();
-        if console_state == STATUS_OK {
-            let init_state = init_status();
-            if init_state == STATUS_OK {
-                let io_fd = io_open_read(SAMPLE_PTR);
-                if io_fd == 0 {
-                    return STATUS_RUNTIME_SET_FAILED;
-                } else {
-                    io_close(io_fd);
-                    let memory_state = memory_diag();
-                    if memory_state == STATUS_OK {
-                        let pid_state = process_current_pid();
-                        if pid_state == 0 {
-                            return STATUS_RUNTIME_SET_FAILED;
-                        } else {
-                            let scheduler_state = scheduler_status();
-                            if scheduler_state == 3 {
-                                return STATUS_RUNTIME_SET_FAILED;
-                            } else {
-                                let string_state = string_len(SAMPLE_PTR);
-                                if string_state == 0 {
-                                    return STATUS_RUNTIME_SET_FAILED;
-                                } else {
-                                    return STATUS_OK;
-                                }
-                            }
-                        }
-                    } else {
-                        return STATUS_RUNTIME_SET_FAILED;
-                    }
-                }
+    proc K::report_status(report: UInt64) -> UInt32 {
+        let kind = report / REPORT_KIND_FACTOR;
+        let rem = report - (kind * REPORT_KIND_FACTOR);
+        return rem / REPORT_STATUS_FACTOR;
+    }
+
+    proc K::runtime_introspect_k_domain(logical_tick: UInt32) -> UInt64 {
+        let pid = process_current_pid();
+        if pid == 0 {
+            return 0;
+        }
+
+        let abi_major = hr_abi_version_major();
+        let abi_minor = hr_abi_version_minor();
+        let abi_patch = hr_abi_version_patch();
+        let abi_compact = (abi_major * 10000) + (abi_minor * 100) + abi_patch;
+
+        let syscall_cap = pack_capability_handle(5001, DOMAIN_K, CAP_CALL_K + CAP_SYSCALL);
+        if syscall_cap == 0 {
+            return 0;
+        }
+
+        let syscall_packed = runtime_syscall(1, SAMPLE_PTR, syscall_cap, logical_tick, 0, 0);
+        let syscall_status = syscall_result_status(syscall_packed);
+        if syscall_status == STATUS_OK {
+        } else {
+            return 0;
+        }
+
+        let scheduler_state = scheduler_status();
+        if scheduler_state == 3 {
+            return 0;
+        }
+
+        let memory_state = memory_diag();
+        if memory_state == STATUS_OK {
+        } else {
+            return 0;
+        }
+
+        let event_id = runtime_record_event(90, STATUS_OK, logical_tick, pid, DOMAIN_K, DOMAIN_K, syscall_cap, 0);
+        if event_id > 0 {
+            let telemetry_id = runtime_emit_telemetry(90, DOMAIN_K, event_id, logical_tick);
+            if telemetry_id > 0 {
+                return pack_report(REPORT_KIND_K, STATUS_OK, abi_compact, telemetry_id);
             } else {
-                return STATUS_RUNTIME_SET_FAILED;
+                return 0;
             }
         } else {
+            return 0;
+        }
+    }
+
+    proc K::runtime_introspect_q_domain(logical_tick: UInt32) -> UInt64 {
+        let pid = process_current_pid();
+        if pid == 0 {
+            return 0;
+        }
+
+        let q_cap = pack_capability_handle(6001, DOMAIN_K, CAP_TRANSITION + CAP_CALL_Q + CAP_CONTRACT_BIND + CAP_IPC);
+        if q_cap == 0 {
+            return 0;
+        }
+
+        let q_contract = pack_resource_contract_handle(7001, DOMAIN_Q, logical_tick, 24, 1);
+        if q_contract == 0 {
+            return 0;
+        }
+
+        let bind_status = runtime_bind_process_domain(pid, DOMAIN_K, DOMAIN_Q, q_cap, q_contract, logical_tick);
+        if bind_status == STATUS_OK {
+        } else {
+            return 0;
+        }
+
+        let transition_status = runtime_transition_request(pid, DOMAIN_K, DOMAIN_Q, SAMPLE_PTR, q_cap, q_contract, logical_tick, 1, 0, 0);
+        if transition_status == STATUS_OK {
+        } else {
+            return 0;
+        }
+
+        let call_status = runtime_xdv_call(DOMAIN_K, DOMAIN_Q, SAMPLE_PTR, q_cap, q_contract, logical_tick, 0, 0);
+        if call_status == STATUS_OK {
+        } else {
+            return 0;
+        }
+
+        let ipc_packed = runtime_send_cross_domain_ipc(pid, pid, DOMAIN_K, DOMAIN_Q, SAMPLE_PTR, 64, q_cap, q_contract, logical_tick, 0, 0);
+        let ipc_status = ipc_result_status(ipc_packed);
+        if ipc_status == STATUS_OK {
+        } else {
+            return 0;
+        }
+
+        let crossing = runtime_domain_crossing_cost(DOMAIN_K, DOMAIN_Q, 64, 3);
+        let telemetry_id = runtime_emit_telemetry(91, DOMAIN_Q, crossing, logical_tick);
+        if telemetry_id > 0 {
+            return pack_report(REPORT_KIND_Q, STATUS_OK, crossing, telemetry_id);
+        } else {
+            return 0;
+        }
+    }
+
+    proc K::runtime_introspect_phi_domain(logical_tick: UInt32) -> UInt64 {
+        let pid = process_current_pid();
+        if pid == 0 {
+            return 0;
+        }
+
+        let phi_cap = pack_capability_handle(6002, DOMAIN_K, CAP_TRANSITION + CAP_CALL_PHI + CAP_CONTRACT_BIND + CAP_IPC);
+        if phi_cap == 0 {
+            return 0;
+        }
+
+        let phi_contract = pack_resource_contract_handle(7002, DOMAIN_PHI, logical_tick, 24, 1);
+        if phi_contract == 0 {
+            return 0;
+        }
+
+        let bind_status = runtime_bind_process_domain(pid, DOMAIN_K, DOMAIN_PHI, phi_cap, phi_contract, logical_tick);
+        if bind_status == STATUS_OK {
+        } else {
+            return 0;
+        }
+
+        let transition_status = runtime_transition_request(pid, DOMAIN_K, DOMAIN_PHI, SAMPLE_PTR, phi_cap, phi_contract, logical_tick, 1, 0, 0);
+        if transition_status == STATUS_OK {
+        } else {
+            return 0;
+        }
+
+        let call_status = runtime_xdv_call(DOMAIN_K, DOMAIN_PHI, SAMPLE_PTR, phi_cap, phi_contract, logical_tick, 0, 0);
+        if call_status == STATUS_OK {
+        } else {
+            return 0;
+        }
+
+        let ipc_packed = runtime_send_cross_domain_ipc(pid, pid, DOMAIN_K, DOMAIN_PHI, SAMPLE_PTR, 64, phi_cap, phi_contract, logical_tick, 0, 0);
+        let ipc_status = ipc_result_status(ipc_packed);
+        if ipc_status == STATUS_OK {
+        } else {
+            return 0;
+        }
+
+        let crossing = runtime_domain_crossing_cost(DOMAIN_K, DOMAIN_PHI, 64, 3);
+        let telemetry_id = runtime_emit_telemetry(92, DOMAIN_PHI, crossing, logical_tick);
+        if telemetry_id > 0 {
+            return pack_report(REPORT_KIND_PHI, STATUS_OK, crossing, telemetry_id);
+        } else {
+            return 0;
+        }
+    }
+
+    proc K::runtime_introspection_snapshot(logical_tick: UInt32) -> UInt64 {
+        let k_report = runtime_introspect_k_domain(logical_tick);
+        if k_report == 0 {
+            return 0;
+        }
+
+        let q_report = runtime_introspect_q_domain(logical_tick + 1);
+        if q_report == 0 {
+            return 0;
+        }
+
+        let phi_report = runtime_introspect_phi_domain(logical_tick + 2);
+        if phi_report == 0 {
+            return 0;
+        }
+
+        let aggregate = report_status(k_report) + report_status(q_report) + report_status(phi_report);
+        return pack_report(REPORT_KIND_ALL, STATUS_OK, aggregate, logical_tick);
+    }
+
+    proc K::run_runtime_domain_set(domain: UInt32, logical_tick: UInt32) {
+        if domain == DOMAIN_K {
+            let report = runtime_introspect_k_domain(logical_tick);
+            if report == 0 {
+                return STATUS_DOMAIN_INTROSPECT_FAILED;
+            } else {
+                return STATUS_OK;
+            }
+        } else {
+            if domain == DOMAIN_Q {
+                let report = runtime_introspect_q_domain(logical_tick);
+                if report == 0 {
+                    return STATUS_DOMAIN_INTROSPECT_FAILED;
+                } else {
+                    return STATUS_OK;
+                }
+            } else {
+                if domain == DOMAIN_PHI {
+                    let report = runtime_introspect_phi_domain(logical_tick);
+                    if report == 0 {
+                        return STATUS_DOMAIN_INTROSPECT_FAILED;
+                    } else {
+                        return STATUS_OK;
+                    }
+                } else {
+                    return STATUS_DOMAIN_INVALID;
+                }
+            }
+        }
+    }
+
+    proc K::run_runtime_minimum_set() {
+        let snapshot = runtime_introspection_snapshot(1);
+        if snapshot == 0 {
             return STATUS_RUNTIME_SET_FAILED;
+        } else {
+            return STATUS_OK;
         }
     }
 

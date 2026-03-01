@@ -23,7 +23,7 @@ forge XdvCoreIoApp {
         if path_ptr == 0 {
             return INVALID_FD;
         } else {
-            return open(path_ptr, MODE_READ);
+            return open_file(path_ptr, MODE_READ);
         }
     }
 
@@ -31,7 +31,7 @@ forge XdvCoreIoApp {
         if path_ptr == 0 {
             return INVALID_FD;
         } else {
-            return open(path_ptr, MODE_WRITE);
+            return open_file(path_ptr, MODE_WRITE);
         }
     }
 
@@ -39,30 +39,30 @@ forge XdvCoreIoApp {
         if path_ptr == 0 {
             return INVALID_FD;
         } else {
-            return open(path_ptr, MODE_APPEND);
+            return open_file(path_ptr, MODE_APPEND);
         }
     }
 
-    proc K::io_read(fd: UInt64, buffer: UInt64, size: UInt32) {
+    proc K::io_read_bytes(fd: UInt64, buffer: UInt64, size: UInt32) {
         if fd == INVALID_FD {
             return STATUS_INVALID_HANDLE;
         } else {
             if buffer == 0 {
                 return STATUS_INVALID_BUFFER;
             } else {
-                return read(fd, buffer, size);
+                return read_file(fd, buffer, size);
             }
         }
     }
 
-    proc K::io_write(fd: UInt64, buffer: UInt64, size: UInt32) {
+    proc K::io_write_bytes(fd: UInt64, buffer: UInt64, size: UInt32) {
         if fd == INVALID_FD {
             return STATUS_INVALID_HANDLE;
         } else {
             if buffer == 0 {
                 return STATUS_INVALID_BUFFER;
             } else {
-                return write(fd, buffer, size);
+                return write_file(fd, buffer, size);
             }
         }
     }
@@ -71,7 +71,8 @@ forge XdvCoreIoApp {
         if fd == INVALID_FD {
             return STATUS_INVALID_HANDLE;
         } else {
-            return close(fd);
+            return close_file(fd);
         }
     }
 }
+
